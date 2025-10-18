@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, role) => {
     try {
-      const res = await fetch('http://192.168.0.121:5000/api/auth/login', {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
       const token = data.token;
 
-      const userRes = await fetch('http://192.168.0.121:5000/api/auth/me', {
+      const userRes = await fetch('http://localhost:5000/api/auth/me', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       });

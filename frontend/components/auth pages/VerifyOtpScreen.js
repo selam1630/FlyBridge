@@ -39,7 +39,7 @@ export default function VerifyOtpScreen() {
 
   setLoading(true);
   try {
-    const response = await fetch('http://192.168.0.121:5000/api/otp/verify-otp', {
+    const response = await fetch('http://localhost:5000/api/otp/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, otp }),
