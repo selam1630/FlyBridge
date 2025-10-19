@@ -25,35 +25,74 @@ const COLORS = {
   INPUT_BG: 'rgba(45, 75, 70, 0.05)',
   CARD_BG: '#FFFFFF',
   STATUS_GREEN: '#4CAF50',
+  STATUS_RED: '#FF4C4C',
 };
 
 export default function SignInScreen() {
   const navigation = useNavigation();
-  const { login } = useContext(AuthContext); 
+  const { login } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('sender'); 
+  const [role, setRole] = useState('sender');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-const handleSignIn = async () => {
+
+  const handleSignIn = async () => {
   if (!email || !password) {
     Alert.alert('Error', 'Please fill all fields');
+    setMessage('Please fill all fields');
     return;
   }
 
-  setLoading(true); 
+  setLoading(true);
+  setMessage('');
+
   try {
-    await login(email, password, role, navigation); 
+    const data = await login(email, password, role, navigation);
+
+    if (data?.message?.includes('pending agent approval')) {
+      Alert.alert('Approval Pending', data.message);
+      setMessage(data.message);
+      return;
+    }
+    if (data?.message?.includes('verify your phone')) {
+      Alert.alert('Phone Verification', data.message);
+      setMessage(data.message);
+      return;
+    }
+
+    if (data?.token) {
+      setMessage('Login successful!');
+      Alert.alert('Success', 'Login successful!');
+     if (data?.token) {
+  if (role === 'agent') {
+    navigation.navigate('AgentChat', {
+      agentId: data.id,   
+      token: data.token,  
+    });
+  }
+}
+ else {
+        navigation.navigate('Dashboard', { role });
+      }
+    } else {
+      Alert.alert('Error', data?.message || 'Invalid credentials');
+      setMessage(data?.message || 'Invalid credentials');
+    }
   } catch (error) {
     console.error('Login error:', error);
     Alert.alert('Error', 'An error occurred. Please try again.');
+    setMessage('An error occurred. Please try again.');
   } finally {
-    setLoading(false); 
+    setLoading(false);
   }
 };
   return (
-    <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
+    <LinearGradient
+      colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]}
+      style={styles.container}
+    >
       <StatusBar barStyle="dark-content" />
       <Header />
       <KeyboardAvoidingView
@@ -65,39 +104,47 @@ const handleSignIn = async () => {
             <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
-              {['user', 'agent'].map(r => (
+
+            {/* Role Selection */}
+            <View style={styles.roleContainer}>
+              {['sender', 'carrier', 'agent', 'receiver'].map(r => (
                 <TouchableOpacity
                   key={r}
                   onPress={() => setRole(r)}
-                  style={{
-                    marginHorizontal: 5,
-                    paddingVertical: 5,
-                    paddingHorizontal: 15,
-                    borderRadius: 10,
-                    backgroundColor: role === r ? COLORS.ACCENT_GOLD : '#eee',
-                  }}
+                  style={[
+                    styles.roleButton,
+                    { backgroundColor: role === r ? COLORS.ACCENT_GOLD : '#eee' },
+                  ]}
                 >
-                  <Text style={{ color: role === r ? COLORS.BACKGROUND_DARK : '#333', fontWeight: 'bold' }}>
+                  <Text
+                    style={{
+                      color: role === r ? COLORS.BACKGROUND_DARK : '#333',
+                      fontWeight: 'bold',
+                    }}
+                  >
                     {r.charAt(0).toUpperCase() + r.slice(1)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
+            {/* Message Display */}
             {message ? (
               <Text
-                style={{
-                  color: message.includes('successful') ? COLORS.STATUS_GREEN : 'red',
-                  textAlign: 'center',
-                  marginBottom: 15,
-                  fontSize: 14,
-                }}
+                style={[
+                  styles.message,
+                  {
+                    color: message.includes('successful')
+                      ? COLORS.STATUS_GREEN
+                      : COLORS.STATUS_RED,
+                  },
+                ]}
               >
                 {message}
               </Text>
             ) : null}
 
+            {/* Inputs */}
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -115,15 +162,17 @@ const handleSignIn = async () => {
               value={password}
               onChangeText={setPassword}
             />
+
+            {/* Sign In Button */}
             <TouchableOpacity
-  style={[styles.signInBtn, loading && { opacity: 0.6 }]}
-  onPress={handleSignIn}
-  disabled={loading} 
->
-  <Text style={styles.signInText}>{loading ? 'Signing In...' : 'Sign In'}</Text>
-</TouchableOpacity>
-
-
+              style={[styles.signInBtn, loading && { opacity: 0.6 }]}
+              onPress={handleSignIn}
+              disabled={loading}
+            >
+              <Text style={styles.signInText}>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don’t have an account?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -155,6 +204,19 @@ const styles = StyleSheet.create({
   logo: { color: COLORS.ACCENT_GOLD, fontSize: 30, fontWeight: 'bold', alignSelf: 'center', marginBottom: 20 },
   title: { color: COLORS.TEXT_DARK, fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 },
   subtitle: { color: '#888', textAlign: 'center', marginBottom: 30, fontSize: 14 },
+  roleContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' },
+  roleButton: {
+    margin: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+  },
+  message: {
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   input: {
     backgroundColor: COLORS.INPUT_BG,
     borderRadius: 10,

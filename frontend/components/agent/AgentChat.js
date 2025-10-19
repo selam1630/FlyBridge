@@ -7,7 +7,8 @@ import {
   TextInput, 
   KeyboardAvoidingView, 
   Platform, 
-  StyleSheet 
+  StyleSheet, 
+  Alert 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../socket';
@@ -21,14 +22,17 @@ const COLORS = {
 };
 
 const AgentChat = ({ route }) => {
-  const { agentId } = route?.params || {};
+  const { agentId, token } = route?.params || {};
 
   const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
+    fetchPendingUsers();
+
     socket.connect();
     console.log(`🟢 Agent connected: ${agentId || 'No Agent ID'}`);
 
@@ -65,7 +69,40 @@ const AgentChat = ({ route }) => {
       console.log('🔴 Agent disconnected');
     };
   }, [agentId, selectedUser]);
+  const fetchPendingUsers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/pending-users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setPendingUsers(data);
+    } catch (err) {
+      console.error('Error fetching pending users:', err);
+    }
+  };
 
+  const approveUser = async (userId) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/approve', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (res.ok) {
+        Alert.alert('Success', 'User approved successfully!');
+        fetchPendingUsers(); 
+      } else {
+        Alert.alert('Error', 'Failed to approve user.');
+      }
+    } catch (err) {
+      console.error('Error approving user:', err);
+      Alert.alert('Error', 'Failed to approve user.');
+    }
+  };
   const selectUser = (user) => {
     if (selectedUser) {
       socket.emit('leaveRoom', selectedUser.userId);
@@ -73,7 +110,6 @@ const AgentChat = ({ route }) => {
     setSelectedUser(user);
     socket.emit('joinRoom', user.userId);
   };
-
   const sendMessage = () => {
     if (!input.trim() || !selectedUser) return;
 
@@ -88,7 +124,6 @@ const AgentChat = ({ route }) => {
     setInput('');
     setMessages((prev) => [...prev, { ...data, createdAt: new Date().toISOString() }]);
   };
-
   const renderUser = ({ item }) => (
     <TouchableOpacity 
       style={[
@@ -114,53 +149,65 @@ const AgentChat = ({ route }) => {
     </View>
   );
 
+  const renderPendingUser = ({ item }) => (
+    <View style={styles.pendingUser}>
+      <Text>{item.fullName} ({item.role})</Text>
+      <TouchableOpacity style={styles.approveBtn} onPress={() => approveUser(item.id)}>
+        <Text style={{ color: '#fff' }}>Approve</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-    <View style={styles.leftPane}>
-      <Text style={styles.title}>Users</Text>
-      <FlatList
-        data={users}
-        renderItem={renderUser}
-        keyExtractor={(item) => item.userId}
-      />
-    </View>
+      <View style={styles.leftPane}>
+        <Text style={styles.title}>Pending Users</Text>
+        <FlatList
+          data={pendingUsers}
+          renderItem={renderPendingUser}
+          keyExtractor={(item) => item.id}
+        />
+        <Text style={styles.title}>Users</Text>
+        <FlatList
+          data={users}
+          renderItem={renderUser}
+          keyExtractor={(item) => item.userId}
+        />
+      </View>
 
-    <View style={styles.chatPane}>
-      {/* ✅ Add DashboardHeader here */}
-      <DashboardHeader user={{ fullName: 'Agent Name', email: 'agent@example.com' }} />
-
-      {selectedUser ? (
-        <>
-          <Text style={styles.chatHeader}>{selectedUser.userName}</Text>
-          <FlatList
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item, index) => item.id || index.toString()}
-          />
-          <View style={styles.inputContainer}>
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="Type a reply..."
-              style={styles.input}
+      <View style={styles.chatPane}>
+        <DashboardHeader user={{ fullName: 'Agent Name', email: 'agent@example.com' }} />
+        {selectedUser ? (
+          <>
+            <Text style={styles.chatHeader}>{selectedUser.userName}</Text>
+            <FlatList
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item, index) => item.id || index.toString()}
             />
-            <TouchableOpacity onPress={sendMessage} disabled={!input.trim()}>
-              <Ionicons name="send" size={24} color={COLORS.ACCENT} />
-            </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder="Type a reply..."
+                style={styles.input}
+              />
+              <TouchableOpacity onPress={sendMessage} disabled={!input.trim()}>
+                <Ionicons name="send" size={24} color={COLORS.ACCENT} />
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.noChat}>
+            <Text>Select a user to start chatting</Text>
           </View>
-        </>
-      ) : (
-        <View style={styles.noChat}>
-          <Text>Select a user to start chatting</Text>
-        </View>
-      )}
-    </View>
-  </KeyboardAvoidingView>
-);
-
+        )}
+      </View>
+    </KeyboardAvoidingView>
+  );
 };
 
 export default AgentChat;
@@ -169,7 +216,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: 'row', backgroundColor: COLORS.BG },
   leftPane: { width: '35%', backgroundColor: COLORS.CARD, padding: 10, borderRightWidth: 1, borderColor: '#ddd' },
   chatPane: { flex: 1, padding: 10 },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
   userItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
   selectedUser: { backgroundColor: '#FFEBC1' },
   userName: { fontWeight: 'bold' },
@@ -182,4 +229,6 @@ const styles = StyleSheet.create({
   inputContainer: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderColor: '#ddd', paddingTop: 5 },
   input: { flex: 1, padding: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginRight: 8 },
   noChat: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  pendingUser: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, borderBottomWidth: 1, borderColor: '#ddd' },
+  approveBtn: { backgroundColor: COLORS.ACCENT, padding: 5, borderRadius: 5 },
 });

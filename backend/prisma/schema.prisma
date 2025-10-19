@@ -26,6 +26,7 @@ model User {
   nationalIDVerifiedAt  DateTime?  
   nationalIDQRHash      String? 
   points               Int      @default(0)  
+  isApproved           Boolean  @default(false)
 }
 model Flight {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
