@@ -31,8 +31,6 @@ const AgentChat = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-
-  // Fetch pending users from server
   const fetchPendingUsers = async () => {
     try {
       if (!token) return;
@@ -47,8 +45,6 @@ const AgentChat = () => {
       Alert.alert('Error', 'Failed to load pending users.');
     }
   };
-
-  // Approve a user
   const approveUser = async (userId) => {
     try {
       const res = await fetch('http://localhost:5000/api/auth/approve', {
@@ -70,15 +66,11 @@ const AgentChat = () => {
       Alert.alert('Error', 'Failed to approve user.');
     }
   };
-
-  // Select a user to chat with
   const selectUser = (user) => {
     if (selectedUser) socket.emit('leaveRoom', selectedUser.userId);
     setSelectedUser(user);
     socket.emit('joinRoom', user.userId);
   };
-
-  // Send message to selected user
   const sendMessage = () => {
     if (!input.trim() || !selectedUser) return;
 
@@ -93,8 +85,6 @@ const AgentChat = () => {
     setMessages((prev) => [...prev, { ...data, createdAt: new Date().toISOString() }]);
     setInput('');
   };
-
-  // Socket.io setup
   useEffect(() => {
     if (!agentId || !token) return;
 
@@ -131,8 +121,6 @@ const AgentChat = () => {
       socket.disconnect();
     };
   }, [agentId, selectedUser, token]);
-
-  // Render pending users
   const renderPendingUser = ({ item }) => (
     <View style={styles.pendingUser}>
       <Text>{item.fullName} ({item.role})</Text>
@@ -141,8 +129,6 @@ const AgentChat = () => {
       </TouchableOpacity>
     </View>
   );
-
-  // Render users
   const renderUser = ({ item }) => (
     <TouchableOpacity 
       style={[styles.userItem, selectedUser?.userId === item.userId && styles.selectedUser]}
@@ -152,8 +138,6 @@ const AgentChat = () => {
       <Text style={styles.lastMessage}>{item.lastMessage}</Text>
     </TouchableOpacity>
   );
-
-  // Render messages
   const renderMessage = ({ item }) => (
     <View style={[styles.messageBubble, item.sentBy === 'agent' ? styles.agentMsg : styles.userMsg]}>
       <Text>{item.message}</Text>

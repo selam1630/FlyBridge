@@ -22,12 +22,13 @@ export const trackShipment = async (req, res) => {
       return res.status(404).json({ message: "Shipment not found" });
     }
 
-    res.status(200).json(shipment);
+res.status(200).json(shipment);
   } catch (error) {
     console.error("Error tracking shipment:", error);
     res.status(500).json({ message: "Failed to track shipment" });
   }
 };
+
 export const confirmDelivery = async (req, res) => {
   try {
     const { trackingCode } = req.params;
@@ -48,55 +49,57 @@ export const confirmDelivery = async (req, res) => {
       where: { id: shipment.id },
       data: { status: "DELIVERED" },
     });
+
     const platformFeeRate = 0.1;
     const shipmentFee = shipment.fee ?? 0;
     const platformFee = shipmentFee * platformFeeRate;
     const amountToRelease = shipmentFee - platformFee;
-
     if (amountToRelease > 0 && shipment.carrierId) {
       await prisma.user.update({
         where: { id: shipment.carrierId },
         data: { balance: { increment: amountToRelease } },
       });
     }
-    const reference = `SHIP-${shipment.trackingCode}-${Date.now()}`;
-    await prisma.payment.create({
-      data: {
-        shipmentId: shipment.id,
-        reference,
-        amount: shipmentFee,
-        platformFee,
-        status: "released",
-        releasedAt: new Date(),
-      },
+    const existingPayment = await prisma.payment.findFirst({
+      where: { shipmentId: shipment.id, status: "pending" },
     });
-  if (shipment.carrierId) {
-  console.log("Adding points to carrier:", shipment.carrierId);
-  const carrierBefore = await prisma.user.findUnique({
-    where: { id: shipment.carrierId },
-    select: { points: true },
-  });
-  console.log("Carrier points before:", carrierBefore?.points);
-const carrier = await prisma.user.findUnique({
-  where: { id: shipment.carrierId },
-  select: { points: true },
-});
 
-const newPoints = (carrier?.points || 0) + 5;
-const updatedCarrier = await prisma.user.update({
-  where: { id: shipment.carrierId },
-  data: { points: newPoints },
-});
+    if (existingPayment) {
+      await prisma.payment.update({
+        where: { id: existingPayment.id },
+        data: {
+          status: "released",
+          releasedAt: new Date(),
+          platformFee,
+        },
+      });
+    } else {
+      await prisma.payment.create({
+        data: {
+          shipmentId: shipment.id,
+          reference: `SHIP-${shipment.trackingCode}-${Date.now()}`,
+          amount: shipmentFee,
+          platformFee,
+          status: "released",
+          releasedAt: new Date(),
+        },
+      });
+    }
+    if (shipment.carrierId) {
+      const carrier = await prisma.user.findUnique({
+        where: { id: shipment.carrierId },
+        select: { points: true },
+      });
 
-console.log("Carrier new points:", updatedCarrier.points);
+      const newPoints = (carrier?.points || 0) + 5;
 
-  const carrierAfter = await prisma.user.findUnique({
-    where: { id: shipment.carrierId },
-    select: { points: true },
-  });
-  console.log("Carrier new points:", carrierAfter?.points);
-}
+      const updatedCarrier = await prisma.user.update({
+        where: { id: shipment.carrierId },
+        data: { points: newPoints },
+      });
 
+      console.log("Carrier new points:", updatedCarrier.points);
+    }
 
     res.status(200).json({
       message: "Delivery confirmed. Payment released and carrier points awarded!",
