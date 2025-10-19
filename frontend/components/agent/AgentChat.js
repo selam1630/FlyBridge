@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../socket';
 import DashboardHeader from '../dashboardheader';
+import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
   BG: '#F7F8FC',
@@ -21,8 +22,9 @@ const COLORS = {
   CARD: '#FFFFFF',
 };
 
-const AgentChat = ({ route }) => {
-  const { agentId, token } = route?.params || {};
+const AgentChat = () => {
+  const { user, token } = useContext(AuthContext); 
+  const agentId = user?.id; 
 
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -30,12 +32,74 @@ const AgentChat = ({ route }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
+  // Fetch pending users from server
+  const fetchPendingUsers = async () => {
+    try {
+      if (!token) return;
+      const res = await fetch('http://localhost:5000/api/auth/pending-users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Unauthorized');
+      const data = await res.json();
+      setPendingUsers(data);
+    } catch (err) {
+      console.error('Error fetching pending users:', err);
+      Alert.alert('Error', 'Failed to load pending users.');
+    }
+  };
+
+  // Approve a user
+  const approveUser = async (userId) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/approve', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) {
+        Alert.alert('Success', 'User approved successfully!');
+        fetchPendingUsers();
+      } else {
+        Alert.alert('Error', 'Failed to approve user.');
+      }
+    } catch (err) {
+      console.error('Error approving user:', err);
+      Alert.alert('Error', 'Failed to approve user.');
+    }
+  };
+
+  // Select a user to chat with
+  const selectUser = (user) => {
+    if (selectedUser) socket.emit('leaveRoom', selectedUser.userId);
+    setSelectedUser(user);
+    socket.emit('joinRoom', user.userId);
+  };
+
+  // Send message to selected user
+  const sendMessage = () => {
+    if (!input.trim() || !selectedUser) return;
+
+    const data = {
+      userId: selectedUser.userId,
+      agentId,
+      sentBy: 'agent',
+      message: input.trim(),
+    };
+
+    socket.emit('sendMessage', data);
+    setMessages((prev) => [...prev, { ...data, createdAt: new Date().toISOString() }]);
+    setInput('');
+  };
+
+  // Socket.io setup
   useEffect(() => {
+    if (!agentId || !token) return;
+
     fetchPendingUsers();
-
     socket.connect();
-    console.log(`🟢 Agent connected: ${agentId || 'No Agent ID'}`);
-
     socket.emit('getUsersWithMessages', agentId);
 
     socket.on('usersList', (list) => {
@@ -43,8 +107,7 @@ const AgentChat = ({ route }) => {
     });
 
     socket.on('loadMessages', (msgs) => {
-      const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      setMessages(sorted);
+      setMessages(msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
     });
 
     socket.on('receiveMessage', (msg) => {
@@ -66,70 +129,23 @@ const AgentChat = ({ route }) => {
       socket.off('receiveMessage');
       socket.off('newUserMessage');
       socket.disconnect();
-      console.log('🔴 Agent disconnected');
     };
-  }, [agentId, selectedUser]);
-  const fetchPendingUsers = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/pending-users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setPendingUsers(data);
-    } catch (err) {
-      console.error('Error fetching pending users:', err);
-    }
-  };
+  }, [agentId, selectedUser, token]);
 
-  const approveUser = async (userId) => {
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/approve', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ userId }),
-      });
+  // Render pending users
+  const renderPendingUser = ({ item }) => (
+    <View style={styles.pendingUser}>
+      <Text>{item.fullName} ({item.role})</Text>
+      <TouchableOpacity style={styles.approveBtn} onPress={() => approveUser(item.id)}>
+        <Text style={{ color: '#fff' }}>Approve</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-      if (res.ok) {
-        Alert.alert('Success', 'User approved successfully!');
-        fetchPendingUsers(); 
-      } else {
-        Alert.alert('Error', 'Failed to approve user.');
-      }
-    } catch (err) {
-      console.error('Error approving user:', err);
-      Alert.alert('Error', 'Failed to approve user.');
-    }
-  };
-  const selectUser = (user) => {
-    if (selectedUser) {
-      socket.emit('leaveRoom', selectedUser.userId);
-    }
-    setSelectedUser(user);
-    socket.emit('joinRoom', user.userId);
-  };
-  const sendMessage = () => {
-    if (!input.trim() || !selectedUser) return;
-
-    const data = {
-      userId: selectedUser.userId,
-      agentId,
-      sentBy: 'agent',
-      message: input.trim(),
-    };
-
-    socket.emit('sendMessage', data);
-    setInput('');
-    setMessages((prev) => [...prev, { ...data, createdAt: new Date().toISOString() }]);
-  };
+  // Render users
   const renderUser = ({ item }) => (
     <TouchableOpacity 
-      style={[
-        styles.userItem,
-        selectedUser?.userId === item.userId && styles.selectedUser
-      ]}
+      style={[styles.userItem, selectedUser?.userId === item.userId && styles.selectedUser]}
       onPress={() => selectUser(item)}
     >
       <Text style={styles.userName}>{item.userName}</Text>
@@ -137,24 +153,13 @@ const AgentChat = ({ route }) => {
     </TouchableOpacity>
   );
 
+  // Render messages
   const renderMessage = ({ item }) => (
-    <View style={[
-      styles.messageBubble,
-      item.sentBy === 'agent' ? styles.agentMsg : styles.userMsg
-    ]}>
+    <View style={[styles.messageBubble, item.sentBy === 'agent' ? styles.agentMsg : styles.userMsg]}>
       <Text>{item.message}</Text>
       <Text style={styles.timeText}>
         {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
-    </View>
-  );
-
-  const renderPendingUser = ({ item }) => (
-    <View style={styles.pendingUser}>
-      <Text>{item.fullName} ({item.role})</Text>
-      <TouchableOpacity style={styles.approveBtn} onPress={() => approveUser(item.id)}>
-        <Text style={{ color: '#fff' }}>Approve</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -179,7 +184,7 @@ const AgentChat = ({ route }) => {
       </View>
 
       <View style={styles.chatPane}>
-        <DashboardHeader user={{ fullName: 'Agent Name', email: 'agent@example.com' }} />
+        <DashboardHeader user={user || { fullName: 'Agent Name', email: 'agent@example.com' }} />
         {selectedUser ? (
           <>
             <Text style={styles.chatHeader}>{selectedUser.userName}</Text>

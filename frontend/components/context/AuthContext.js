@@ -27,38 +27,38 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password, role) => {
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
-      });
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) {
-        Alert.alert('Login Failed', data.message || 'Invalid credentials');
-        return false; 
-      }
-
-      const token = data.token;
-
-      const userRes = await fetch('http://localhost:5000/api/auth/me', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const userData = await userRes.json();
-
-      setUser(userData);
-      setToken(token);
-      await AsyncStorage.setItem('authData', JSON.stringify({ token, user: userData }));
-
-      return true; 
-    } catch (err) {
-      console.error('Login error:', err);
-      Alert.alert('Error', 'Something went wrong. Try again.');
-      return false;
+    const data = await res.json();
+    if (!res.ok) {
+      Alert.alert('Login Failed', data.message || 'Invalid credentials');
+      return null; 
     }
-  };
+
+    const token = data.token;
+
+    // Fetch current user
+    const userRes = await fetch('http://localhost:5000/api/auth/me', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userData = await userRes.json();
+
+    setUser(userData);
+    setToken(token);
+    await AsyncStorage.setItem('authData', JSON.stringify({ token, user: userData }));
+    return { token, user: userData }; 
+  } catch (err) {
+    console.error('Login error:', err);
+    Alert.alert('Error', 'Something went wrong. Try again.');
+    return null;
+  }
+};
 const logout = async () => {
   try {
     setUser(null); 

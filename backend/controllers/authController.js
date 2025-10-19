@@ -157,7 +157,13 @@ export const approveUser = async (req, res) => {
 export const getPendingUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      where: { isApproved: false },
+      where: {
+        isApproved: false,
+        OR: [
+          { role: { in: ['sender', 'carrier'] } },
+          { role: { in: ['Sender', 'Carrier'] } },
+        ],
+      },
       select: {
         id: true,
         fullName: true,
@@ -167,6 +173,7 @@ export const getPendingUsers = async (req, res) => {
         phoneVerified: true,
       },
     });
+
     res.json(users);
   } catch (error) {
     console.error('Error fetching pending users:', error.message);

@@ -38,7 +38,7 @@ export default function SignInScreen() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSignIn = async () => {
+ const handleSignIn = async () => {
   if (!email || !password) {
     Alert.alert('Error', 'Please fill all fields');
     setMessage('Please fill all fields');
@@ -49,37 +49,42 @@ export default function SignInScreen() {
   setMessage('');
 
   try {
-    const data = await login(email, password, role, navigation);
+    // Call login from AuthContext; it now returns { token, user } or null
+    const data = await login(email, password, role);
 
-    if (data?.message?.includes('pending agent approval')) {
-      Alert.alert('Approval Pending', data.message);
-      setMessage(data.message);
-      return;
-    }
-    if (data?.message?.includes('verify your phone')) {
-      Alert.alert('Phone Verification', data.message);
-      setMessage(data.message);
+    if (!data) {
+      // Login failed
       return;
     }
 
-    if (data?.token) {
-      setMessage('Login successful!');
-      Alert.alert('Success', 'Login successful!');
-     if (data?.token) {
-  if (role === 'agent') {
-    navigation.navigate('AgentChat', {
-      agentId: data.id,   
-      token: data.token,  
-    });
-  }
-}
- else {
-        navigation.navigate('Dashboard', { role });
-      }
+    const { token, user } = data;
+
+    // Optional: handle pending approval / phone verification messages if needed
+    if (user?.isApproved === false && role !== 'receiver' && role !== 'agent') {
+      Alert.alert('Approval Pending', 'Your account is pending agent approval. Please wait.');
+      setMessage('Your account is pending agent approval.');
+      return;
+    }
+
+    if ((role === 'sender' || role === 'carrier') && !user?.phoneVerified) {
+      Alert.alert('Phone Verification', 'Please verify your phone number before logging in.');
+      setMessage('Please verify your phone number.');
+      return;
+    }
+
+    // Successful login
+    setMessage('Login successful!');
+    Alert.alert('Success', 'Login successful!');
+
+    if (role === 'agent') {
+      navigation.navigate('AgentChat', {
+        agentId: user.id,
+        token, // token is correctly passed
+      });
     } else {
-      Alert.alert('Error', data?.message || 'Invalid credentials');
-      setMessage(data?.message || 'Invalid credentials');
+      navigation.navigate('Dashboard', { role });
     }
+
   } catch (error) {
     console.error('Login error:', error);
     Alert.alert('Error', 'An error occurred. Please try again.');
@@ -88,6 +93,7 @@ export default function SignInScreen() {
     setLoading(false);
   }
 };
+
   return (
     <LinearGradient
       colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]}
