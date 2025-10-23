@@ -1,7 +1,6 @@
 import axios from "axios";
 
 const BASE_URL = "https://api.textbee.dev/api/v1";
-
 export const sendSms = async (phone, message) => {
   try {
     await axios.post(

@@ -69,7 +69,7 @@ export const createShipment = async (req, res) => {
       where: { id: shipment.id },
       data: { trackingCode },
     });
-    const message = `📦 Hello ${acceptorName}, you have a new item shipment from ${req.user.fullName}. 
+    const message = `Hello ${acceptorName}, you have a new item shipment from ${req.user.fullName}. 
 Track your package using code: ${trackingCode}. 
 Flight from ${flight.from} to ${flight.to} departs on ${new Date(flight.departureDate).toLocaleDateString()}.`;
     await sendSms(acceptorPhone, message);

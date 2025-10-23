@@ -1,5 +1,4 @@
 import prisma from "../config/db.js";
-
 export const trackShipment = async (req, res) => {
   try {
     const { trackingCode } = req.params;
@@ -51,9 +50,13 @@ export const confirmDelivery = async (req, res) => {
     });
 
     const platformFeeRate = 0.1;
-    const shipmentFee = shipment.fee ?? 0;
-    const platformFee = shipmentFee * platformFeeRate;
-    const amountToRelease = shipmentFee - platformFee;
+const payment = await prisma.payment.findFirst({
+  where: { shipmentId: shipment.id },
+});
+const shipmentFee = payment?.amount ?? 0;
+const platformFee = shipmentFee * platformFeeRate;
+const amountToRelease = shipmentFee - platformFee;
+
     if (amountToRelease > 0 && shipment.carrierId) {
       await prisma.user.update({
         where: { id: shipment.carrierId },

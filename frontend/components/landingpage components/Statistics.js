@@ -7,7 +7,6 @@ import client2 from '../../assets/person2.png';
 import client3 from '../../assets/person3.png';
 
 const { width } = Dimensions.get('window');
-
 export default function StatsAndTestimonials() {
   const stats = [
     { label: 'Satisfied Customers', value: '5000+' },
@@ -89,7 +88,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   statCard: {
-    width: '48%',
+    width: '48%', 
     backgroundColor: COLORS.CARD_BG,
     padding: 20,
     borderRadius: 16,
@@ -120,12 +119,12 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   testimonialContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row', 
     justifyContent: 'space-between',
     flexWrap: 'wrap',
   },
   testimonialCard: {
-    width: '32%', // three cards in a row
+    width: '32%', 
     backgroundColor: COLORS.CARD_BG,
     borderRadius: 16,
     padding: 20,

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity, Animated } from 'react-native';
 import * as Animatable from 'react-native-animatable';
+import { LinearGradient } from 'expo-linear-gradient';
 import COLORS from '../theme/colors';
-import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
 const ServiceItem = ({ title, description, details, icon, index }) => {
@@ -18,14 +17,6 @@ const ServiceItem = ({ title, description, details, icon, index }) => {
   const onMouseLeave = () => {
     if (isWeb) Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
   };
-
-  const cardStyle = [
-    styles.serviceCard,
-    isWeb
-      ? { background: 'linear-gradient(135deg, #FFB733 0%, #F4F7FB 100%)' }
-      : { backgroundColor: COLORS.CARD_BG },
-    { transform: [{ scale }] },
-  ];
 
   return (
     <Animatable.View
@@ -42,23 +33,40 @@ const ServiceItem = ({ title, description, details, icon, index }) => {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
       >
-        <Animated.View style={cardStyle}>
-          <Animatable.View animation="bounceIn" duration={1200} style={styles.iconWrapper}>
-          </Animatable.View>
-          <Animatable.Text animation="fadeInUp" delay={300} style={styles.serviceTitle}>
-            {title}
-          </Animatable.Text>
-          <Animatable.Text animation="fadeInUp" delay={400} style={styles.serviceDescription}>
-            {description}
-          </Animatable.Text>
-          <Animatable.Text animation="fadeInUp" delay={500} style={styles.serviceDetails}>
-            {details}
-          </Animatable.Text>
+        <Animated.View style={{ transform: [{ scale }] }}>
+          {isWeb ? (
+            <View style={[styles.serviceCard, { background: 'linear-gradient(135deg, #FFB733 0%, #F4F7FB 100%)' }]}>
+              <ServiceContent title={title} description={description} details={details} />
+            </View>
+          ) : (
+            <LinearGradient
+              colors={['#FFB733', '#F4F7FB']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.serviceCard}
+            >
+              <ServiceContent title={title} description={description} details={details} />
+            </LinearGradient>
+          )}
         </Animated.View>
       </TouchableOpacity>
     </Animatable.View>
   );
 };
+const ServiceContent = ({ title, description, details }) => (
+  <>
+    <Animatable.View animation="bounceIn" duration={1200} style={styles.iconWrapper}></Animatable.View>
+    <Animatable.Text animation="fadeInUp" delay={300} style={styles.serviceTitle}>
+      {title}
+    </Animatable.Text>
+    <Animatable.Text animation="fadeInUp" delay={400} style={styles.serviceDescription}>
+      {description}
+    </Animatable.Text>
+    <Animatable.Text animation="fadeInUp" delay={500} style={styles.serviceDetails}>
+      {details}
+    </Animatable.Text>
+  </>
+);
 
 export default function ServicesSection({ services }) {
   const rows = [];
@@ -94,7 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   servicesRow: {
-    flexDirection: 'row',
+    flexDirection: isWeb ? 'row' : 'column',
     justifyContent: 'center',
     gap: 20,
     marginBottom: 30,
