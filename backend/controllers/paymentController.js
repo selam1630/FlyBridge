@@ -1,6 +1,5 @@
 import fetch from "node-fetch";
 import prisma from "../config/db.js";
-
 export const initializePayment = async (req, res) => {
   try {
     const { shipmentId, amount, currency, customerEmail, customerName } = req.body;
