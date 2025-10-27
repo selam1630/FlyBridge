@@ -62,7 +62,7 @@ export default function CarrierProfileScreen() {
   const [newDepartureDate, setNewDepartureDate] = useState(new Date());
   const [activeMenu, setActiveMenu] = useState('SETTINGS');
 
-  const BASE_URL = 'http://192.168.0.121:5000'
+  const BASE_URL = 'https://flybridge-1.onrender.com'
 
   const fetchProfile = async () => {
     try {

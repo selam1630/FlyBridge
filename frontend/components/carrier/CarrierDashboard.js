@@ -71,7 +71,7 @@ useEffect(() => {
 }, [token]);
   const fetchFlights = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/flights/get');
+      const res = await fetch('https://flybridge-1.onrender.com/api/flights/get');
       const data = await res.json();
       setFlights(data);
     } catch (err) {
@@ -81,7 +81,7 @@ useEffect(() => {
 
   const fetchShipments = async () => {
   try {
-    const res = await fetch('http://localhost:5000/api/flights/shipments', {
+    const res = await fetch('https://flybridge-1.onrender.com/api/flights/shipments', {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -98,7 +98,7 @@ useEffect(() => {
 };
 const fetchUserPoints = async () => {
   try {
-    const res = await fetch("http://localhost:5000/api/points/me", {
+    const res = await fetch("https://flybridge-1.onrender.com/api/points/me", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -116,7 +116,7 @@ const fetchUserPoints = async () => {
       return;
     }
     try {
-      const res = await fetch('http://localhost:5000/api/flights/add', {
+      const res = await fetch('https://flybridge-1.onrender.com/api/flights/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

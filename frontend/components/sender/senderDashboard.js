@@ -168,7 +168,7 @@ export default function SenderDashboard({ route }) {
 
   const fetchFlights = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/sender/flights', {
+      const res = await fetch('https://flybridge-1.onrender.com/api/sender/flights', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -206,7 +206,7 @@ export default function SenderDashboard({ route }) {
   setIsSubmitting(true);
 
   try {
-    const shipmentRes = await fetch('http://localhost:5000/api/sender/shipments', {
+    const shipmentRes = await fetch('https://flybridge-1.onrender.com/api/sender/shipments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ export default function SenderDashboard({ route }) {
     if (!shipmentRes.ok) {
       return Alert.alert('Error', shipmentData.message || 'Failed to create shipment.');
     }
-    const paymentRes = await fetch('http://localhost:5000/api/payment/initialize', {
+    const paymentRes = await fetch('https://flybridge-1.onrender.com/api/payment/initialize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

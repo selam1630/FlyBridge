@@ -120,7 +120,7 @@ export default function ReceiverDashboard() {
     setIsLoading(true);
     setShipmentDetails(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/receiver/track/${trackingCode.trim()}`);
+      const res = await fetch(`https://flybridge-1.onrender.com/api/receiver/track/${trackingCode.trim()}`);
       const data = await res.json();
       if (res.ok) {
         setShipmentDetails(data);
@@ -150,7 +150,7 @@ export default function ReceiverDashboard() {
 
     try {
       setIsLoading(true);
-      const API_BASE = "http://localhost:5000";
+      const API_BASE = "https://flybridge-1.onrender.com";
       const trackingCode = shipment?.trackingCode;
 
       console.log("Sending confirmation request for:", trackingCode);

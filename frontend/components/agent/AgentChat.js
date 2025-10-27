@@ -34,7 +34,7 @@ const AgentChat = () => {
   const fetchPendingUsers = async () => {
     try {
       if (!token) return;
-      const res = await fetch('http://localhost:5000/api/auth/pending-users', {
+      const res = await fetch('https://flybridge-1.onrender.com/api/auth/pending-users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Unauthorized');
@@ -47,7 +47,7 @@ const AgentChat = () => {
   };
   const approveUser = async (userId) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/approve', {
+      const res = await fetch('https://flybridge-1.onrender.com/api/auth/approve', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
