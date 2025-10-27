@@ -25,7 +25,7 @@ const COLORS = {
 };
 
 const SupportChat = ({ route }) => {
-  const { userId, agentId, role } = route.params; 
+ const { userId, agentId, role } = route?.params ?? {};
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 

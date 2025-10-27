@@ -49,17 +49,13 @@ export default function SignInScreen() {
   setMessage('');
 
   try {
-    // Call login from AuthContext; it now returns { token, user } or null
     const data = await login(email, password, role);
 
     if (!data) {
-      // Login failed
       return;
     }
 
     const { token, user } = data;
-
-    // Optional: handle pending approval / phone verification messages if needed
     if (user?.isApproved === false && role !== 'receiver' && role !== 'agent') {
       Alert.alert('Approval Pending', 'Your account is pending agent approval. Please wait.');
       setMessage('Your account is pending agent approval.');
@@ -71,15 +67,13 @@ export default function SignInScreen() {
       setMessage('Please verify your phone number.');
       return;
     }
-
-    // Successful login
     setMessage('Login successful!');
     Alert.alert('Success', 'Login successful!');
 
     if (role === 'agent') {
       navigation.navigate('AgentChat', {
         agentId: user.id,
-        token, // token is correctly passed
+        token, 
       });
     } else {
       navigation.navigate('Dashboard', { role });
