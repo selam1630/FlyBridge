@@ -11,7 +11,6 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 import Header from '../Header';
 import { AuthContext } from '../context/AuthContext';
 
@@ -28,7 +27,6 @@ const COLORS = {
 };
 
 export default function SignInScreen() {
-  const navigation = useNavigation();
   const { login } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
@@ -54,25 +52,11 @@ export default function SignInScreen() {
       return;
     }
 
-    const { token, user } = data;
-    if (user?.isApproved === false && role !== 'receiver' && role !== 'agent') {
-      setMessage('Your account is pending agent approval. Please wait.');
-      return;
-    }
-
-    if ((role === 'sender' || role === 'carrier') && !user?.phoneVerified) {
-      setMessage('Please verify your email address before logging in.');
-      return;
-    }
-    setMessage('Login successful!');
-
-    if (role === 'agent') {
-      navigation.navigate('AgentChat', {
-        agentId: user.id,
-        token, 
-      });
-    } else {
-      navigation.navigate('Dashboard', { role });
+    // AuthContext updates the root navigator, which mounts this user's role screen.
+    // Do not navigate to stale route names here: role dashboards are registered
+    // as CarrierDashboard, SenderDashboard, ReceiverDashboard, and AgentDashboard.
+    if (!data?.user?.role) {
+      setMessage('Sign in succeeded, but the account role could not be loaded.');
     }
 
   } catch (error) {

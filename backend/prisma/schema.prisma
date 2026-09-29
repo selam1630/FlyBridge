@@ -51,6 +51,7 @@ model Shipment {
   flightId             String   @db.Uuid
   acceptorName         String
   acceptorPhone        String
+  acceptorEmail        String?
   acceptorNationalID   String
   itemWeight           Float
   acceptorVerified     Boolean  @default(false)

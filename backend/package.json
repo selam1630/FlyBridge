@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "seed": "node seed.js"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +25,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.13",
     "nodemailer": "^7.0.13",
     "prisma": "^6.17.1",
     "socket.io": "^4.8.1"

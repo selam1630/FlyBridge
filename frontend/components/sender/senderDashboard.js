@@ -57,6 +57,8 @@ const MemoizedShipmentModal = React.memo(({
   setAcceptorName,
   acceptorPhone,
   setAcceptorPhone,
+  acceptorEmail,
+  setAcceptorEmail,
   acceptorNationalID,
   setAcceptorNationalID,
   itemDescription,
@@ -79,11 +81,11 @@ const MemoizedShipmentModal = React.memo(({
           <Text style={styles.modalTitle}>Shipment Request</Text>
           {selectedFlight && (
             <Text style={styles.modalSubtitle}>
-              Flight: **{selectedFlight.from}** to **{selectedFlight.to}** (Max {selectedFlight.availableKg} kg)
+              Flight: <Text style={styles.modalSubtitleStrong}>{selectedFlight.from} to {selectedFlight.to}</Text> (Max {selectedFlight.availableKg} kg)
             </Text>
           )}
           <ScrollView style={{ maxHeight: 400, width: '100%', paddingHorizontal: 10 }}>
-            <Text style={styles.label}>Item Weight (Kg): **{itemWeight} kg**</Text>
+            <Text style={styles.label}>Item Weight (Kg): <Text style={styles.modalSubtitleStrong}>{itemWeight} kg</Text></Text>
             <Slider
               style={styles.slider}
               minimumValue={1}
@@ -110,6 +112,15 @@ const MemoizedShipmentModal = React.memo(({
               value={acceptorPhone}
               onChangeText={setAcceptorPhone}
               keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email Address"
+              placeholderTextColor={COLORS.SECONDARY_TEXT}
+              value={acceptorEmail}
+              onChangeText={setAcceptorEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
             <TextInput
               style={styles.input}
@@ -162,6 +173,7 @@ export default function SenderDashboard({ route }) {
   const [itemWeight, setItemWeight] = useState(5);
   const [acceptorName, setAcceptorName] = useState('');
   const [acceptorPhone, setAcceptorPhone] = useState('');
+  const [acceptorEmail, setAcceptorEmail] = useState('');
   const [acceptorNationalID, setAcceptorNationalID] = useState('');
   const [itemDescription, setItemDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,13 +204,17 @@ export default function SenderDashboard({ route }) {
     setItemWeight(5);
     setAcceptorName('');
     setAcceptorPhone('');
+    setAcceptorEmail('');
     setAcceptorNationalID('');
     setItemDescription('');
   };
   const handleCreateShipment = useCallback(async () => {
   if (!selectedFlight) return Alert.alert('Error', 'Please select a flight first.');
-  if (!acceptorName || !acceptorPhone || !acceptorNationalID) {
-    return Alert.alert('Missing Details', 'Recipient name, phone, and ID are required.');
+  if (!acceptorName || !acceptorPhone || !acceptorEmail || !acceptorNationalID) {
+    return Alert.alert('Missing Details', 'Recipient name, phone, email, and ID are required.');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acceptorEmail.trim())) {
+    return Alert.alert('Invalid Email', 'Enter a valid recipient email address.');
   }
   if (itemWeight <= 0 || itemWeight > selectedFlight.availableKg) {
     return Alert.alert('Weight Error', 'Invalid weight or exceeds flight capacity.');
@@ -218,6 +234,7 @@ export default function SenderDashboard({ route }) {
         itemWeight: parseFloat(itemWeight),
         acceptorName,
         acceptorPhone,
+        acceptorEmail: acceptorEmail.trim().toLowerCase(),
         acceptorNationalID,
         itemDescription,
       }),
@@ -268,6 +285,7 @@ export default function SenderDashboard({ route }) {
   itemWeight,
   acceptorName,
   acceptorPhone,
+  acceptorEmail,
   acceptorNationalID,
   itemDescription,
   token,
@@ -390,6 +408,8 @@ export default function SenderDashboard({ route }) {
         setAcceptorName={setAcceptorName}
         acceptorPhone={acceptorPhone}
         setAcceptorPhone={setAcceptorPhone}
+        acceptorEmail={acceptorEmail}
+        setAcceptorEmail={setAcceptorEmail}
         acceptorNationalID={acceptorNationalID}
         setAcceptorNationalID={setAcceptorNationalID}
         itemDescription={itemDescription}
@@ -620,6 +640,7 @@ const styles = StyleSheet.create({
     color: COLORS.BACKGROUND_DARK,
     marginBottom: 10,
   },
+  modalSubtitleStrong: { fontWeight: 'bold' },
   modalSubtitle: {
     fontSize: 14,
     color: COLORS.SECONDARY_TEXT,
