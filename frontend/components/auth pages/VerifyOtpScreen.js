@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState } from 'react';
 import {
   View,
@@ -27,7 +28,7 @@ const COLORS = {
 export default function VerifyOtpScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { phone } = route.params || {};
+  const { email } = route.params || {};
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,10 +40,10 @@ export default function VerifyOtpScreen() {
 
   setLoading(true);
   try {
-    const response = await fetch('https://flybridge-1.onrender.com/api/otp/verify-otp', {
+    const response = await fetch(`${API_BASE_URL}/api/otp/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, otp }),
+      body: JSON.stringify({ email, otp }),
     });
     const data = await response.json();
 
@@ -78,7 +79,7 @@ export default function VerifyOtpScreen() {
             <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>OTP Verification</Text>
             <Text style={styles.subtitle}>
-              Enter the 6-digit code sent to {phone || 'your phone number'}
+              Enter the 6-digit code sent to {email || 'your email address'}
             </Text>
 
             <TextInput

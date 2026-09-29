@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState, useEffect, useCallback,useContext } from 'react';
 import {
   View,
@@ -168,7 +169,7 @@ export default function SenderDashboard({ route }) {
 
   const fetchFlights = useCallback(async () => {
     try {
-      const res = await fetch('https://flybridge-1.onrender.com/api/sender/flights', {
+      const res = await fetch(`${API_BASE_URL}/api/sender/flights`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -206,7 +207,7 @@ export default function SenderDashboard({ route }) {
   setIsSubmitting(true);
 
   try {
-    const shipmentRes = await fetch('https://flybridge-1.onrender.com/api/sender/shipments', {
+    const shipmentRes = await fetch(`${API_BASE_URL}/api/sender/shipments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,7 +228,7 @@ export default function SenderDashboard({ route }) {
     if (!shipmentRes.ok) {
       return Alert.alert('Error', shipmentData.message || 'Failed to create shipment.');
     }
-    const paymentRes = await fetch('https://flybridge-1.onrender.com/api/payment/initialize', {
+    const paymentRes = await fetch(`${API_BASE_URL}/api/payment/initialize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -329,7 +330,7 @@ export default function SenderDashboard({ route }) {
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
            <TouchableOpacity
-                     onPress={() => navigation.navigate('SupportChat', { userId: '68eca3cb4d9377eea1b91b46' })}
+                     onPress={() => navigation.navigate('SupportChat', { userId: user?.id })}
                    
                      style={{
                        backgroundColor: "",

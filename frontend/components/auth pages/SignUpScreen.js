@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,7 +10,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -33,32 +33,35 @@ export default function SignUpScreen() {
   const [nationalID, setNationalID] = useState('');
   const [role, setRole] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 const handleSignUp = async () => {
   if (!fullName || !email || !password || !phone || !nationalID || !role) {
-    Alert.alert('Missing Information', 'Please fill in all fields before signing up.');
+    setMessage('Please fill in all fields before signing up.');
     return;
   }
 
+  setMessage('');
   setLoading(true);
   try {
-    const response = await fetch('https://flybridge-1.onrender.com/api/auth/register', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fullName, email, password, phone, nationalID, role }),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (response.ok) {
       console.log('Registration successful:', data);
-      navigation.navigate('VerifyOtp', { phone });
+      navigation.navigate('VerifyOtp', { email });
     } else {
-      console.error('Registration failed:', data.message || data);
-      Alert.alert('Error', data.message || 'Registration failed');
+      const errorMessage = data.message || `Sign up failed (${response.status}).`;
+      console.error('Registration failed:', errorMessage);
+      setMessage(errorMessage);
     }
   } catch (error) {
     console.error('Error registering:', error);
-    Alert.alert('Error', 'An error occurred. Please try again.');
+    setMessage(`Could not connect to the server at ${API_BASE_URL}. Make sure the backend is running and the address is reachable from this device.`);
   } finally {
     setLoading(false);
   }
@@ -80,6 +83,7 @@ const handleSignUp = async () => {
             <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join the SwiftLink network</Text>
+            {message ? <Text accessibilityRole="alert" style={styles.errorMessage}>{message}</Text> : null}
 
             <TextInput
               style={styles.input}
@@ -188,6 +192,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30
   },
+  errorMessage: { color: '#C62828', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
   input: {
     backgroundColor: COLORS.INPUT_BG,
     borderRadius: 10,

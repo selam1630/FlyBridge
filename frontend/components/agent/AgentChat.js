@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useEffect, useState, useContext } from 'react';
 import { 
   View, 
@@ -34,7 +35,7 @@ const AgentChat = () => {
   const fetchPendingUsers = async () => {
     try {
       if (!token) return;
-      const res = await fetch('https://flybridge-1.onrender.com/api/auth/pending-users', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/pending-users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Unauthorized');
@@ -47,7 +48,7 @@ const AgentChat = () => {
   };
   const approveUser = async (userId) => {
     try {
-      const res = await fetch('https://flybridge-1.onrender.com/api/auth/approve', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/approve`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

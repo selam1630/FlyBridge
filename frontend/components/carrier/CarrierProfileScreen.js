@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
@@ -62,7 +63,7 @@ export default function CarrierProfileScreen() {
   const [newDepartureDate, setNewDepartureDate] = useState(new Date());
   const [activeMenu, setActiveMenu] = useState('SETTINGS');
 
-  const BASE_URL = 'https://flybridge-1.onrender.com'
+  const BASE_URL = API_BASE_URL
 
   const fetchProfile = async () => {
     try {
@@ -249,7 +250,7 @@ export default function CarrierProfileScreen() {
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => navigation.navigate('CarrierDashboard')} />
           <TouchableOpacity
-            onPress={() => navigation.navigate('SupportChat', { userId: '68eb15ad2961325b5b181310' })}
+            onPress={() => navigation.navigate('SupportChat', { userId: user?.id })}
             style={styles.helpButton}
           >
             <Text style={styles.helpButtonText}>HELP</Text>

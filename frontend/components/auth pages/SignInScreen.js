@@ -9,7 +9,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -39,9 +38,8 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
 
  const handleSignIn = async () => {
-  if (!email || !password) {
-    Alert.alert('Error', 'Please fill all fields');
-    setMessage('Please fill all fields');
+  if (!email.trim() || !password) {
+    setMessage('Enter your email and password.');
     return;
   }
 
@@ -51,24 +49,22 @@ export default function SignInScreen() {
   try {
     const data = await login(email, password, role);
 
-    if (!data) {
+    if (data?.error) {
+      setMessage(data.error);
       return;
     }
 
     const { token, user } = data;
     if (user?.isApproved === false && role !== 'receiver' && role !== 'agent') {
-      Alert.alert('Approval Pending', 'Your account is pending agent approval. Please wait.');
-      setMessage('Your account is pending agent approval.');
+      setMessage('Your account is pending agent approval. Please wait.');
       return;
     }
 
     if ((role === 'sender' || role === 'carrier') && !user?.phoneVerified) {
-      Alert.alert('Phone Verification', 'Please verify your phone number before logging in.');
-      setMessage('Please verify your phone number.');
+      setMessage('Please verify your email address before logging in.');
       return;
     }
     setMessage('Login successful!');
-    Alert.alert('Success', 'Login successful!');
 
     if (role === 'agent') {
       navigation.navigate('AgentChat', {
@@ -81,8 +77,7 @@ export default function SignInScreen() {
 
   } catch (error) {
     console.error('Login error:', error);
-    Alert.alert('Error', 'An error occurred. Please try again.');
-    setMessage('An error occurred. Please try again.');
+    setMessage(error.message || 'Sign in failed. Please try again.');
   } finally {
     setLoading(false);
   }

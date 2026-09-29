@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { sendSms } from './smsController.js';
+import { sendVerificationEmail } from './emailController.js';
 import crypto from 'crypto';
 export const register = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ export const register = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      role: 'agent', 
+      role: 'agent',
     },
   });
 } else {
@@ -49,7 +49,13 @@ export const register = async (req, res) => {
     data: { otpCode: otp, otpExpiry: expiryTime },
   });
 
-  await sendSms(phone, `Your FlightBridge verification code is ${otp}`);
+  try {
+    await sendVerificationEmail(email, otp);
+  } catch (mailError) {
+    await prisma.user.delete({ where: { id: newUser.id } });
+    console.error('Signup OTP email delivery failed:', mailError.message);
+    return res.status(503).json({ message: 'Could not send the verification email. Check the SMTP settings and try again.' });
+  }
 }
     const token = jwt.sign(
       { id: newUser.id, role: newUser.role || role },
@@ -92,10 +98,15 @@ export const getMe = async (req, res) => {
 };
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const requestedRole = String(req.body.role || '').trim().toLowerCase();
+    const { email, password } = req.body;
+    const allowedRoles = ['sender', 'carrier', 'receiver', 'agent'];
+    if (!allowedRoles.includes(requestedRole)) {
+      return res.status(400).json({ message: 'Choose a valid account role.' });
+    }
 
     let user;
-    if (role === 'agent') {
+    if (requestedRole === 'agent') {
       user = await prisma.agent.findUnique({ where: { email } });
     } else {
       user = await prisma.user.findUnique({ where: { email } });
@@ -110,27 +121,35 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password.' });
     }
 
-    if (role !== 'receiver' && role !== 'agent' && !user.isApproved) {
+    const accountRole = String(user.role || '').trim().toLowerCase();
+    if (accountRole !== requestedRole) {
+      const displayRole = accountRole ? accountRole[0].toUpperCase() + accountRole.slice(1) : 'another role';
       return res.status(403).json({
-        message: 'Your account is pending agent approval. Please wait for approval before logging in.',
+        message: `This account is registered as ${displayRole}. Select ${displayRole} to sign in.`,
       });
     }
 
-    if ((role === 'sender' || role === 'carrier') && !user.phoneVerified) {
+    if ((accountRole === 'sender' || accountRole === 'carrier') && !user.isApproved) {
       return res.status(403).json({
-        message: 'Please verify your phone number before logging in.',
+        message: `Your ${accountRole} account is pending agent approval. Please wait for approval before logging in.`,
+      });
+    }
+
+    if ((accountRole === 'sender' || accountRole === 'carrier') && !user.phoneVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email address before logging in.',
       });
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role || role },
+      { id: user.id, role: accountRole },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
     res.status(200).json({
       token,
       id: user.id,
-      role: user.role || role,
+      role: accountRole,
     });
   } catch (error) {
     console.error('Error during login:', error.message);

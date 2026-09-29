@@ -1,6 +1,6 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
 
 export const AuthContext = createContext();
 
@@ -14,8 +14,13 @@ export const AuthProvider = ({ children }) => {
         const storedData = await AsyncStorage.getItem('authData');
         if (storedData) {
           const { token, user } = JSON.parse(storedData);
-          setUser(user);
-          setToken(token);
+          const isPostgresUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user?.id || '');
+          if (isPostgresUuid) {
+            setUser(user);
+            setToken(token);
+          } else {
+            await AsyncStorage.removeItem('authData');
+          }
         }
       } catch (err) {
         console.error('Error loading stored auth data:', err);
@@ -27,36 +32,37 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password, role) => {
-  try {
-    const res = await fetch('https://flybridge-1.onrender.com/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, role }),
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      Alert.alert('Login Failed', data.message || 'Invalid credentials');
-      return null; 
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { error: data.message || `Sign in failed (${res.status}).` };
+      }
+
+      const token = data.token;
+      const userRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userData = await userRes.json().catch(() => ({}));
+      if (!userRes.ok) {
+        return { error: userData.message || `Could not load your account (${userRes.status}).` };
+      }
+
+      setUser(userData);
+      setToken(token);
+      await AsyncStorage.setItem('authData', JSON.stringify({ token, user: userData }));
+      return { token, user: userData };
+    } catch (err) {
+      console.error('Login error:', err);
+      return { error: `Could not connect to the server at ${API_BASE_URL}. Make sure the backend is running and the address is reachable from this device.` };
     }
-
-    const token = data.token;
-    const userRes = await fetch('https://flybridge-1.onrender.com/api/auth/me', {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const userData = await userRes.json();
-
-    setUser(userData);
-    setToken(token);
-    await AsyncStorage.setItem('authData', JSON.stringify({ token, user: userData }));
-    return { token, user: userData }; 
-  } catch (err) {
-    console.error('Login error:', err);
-    Alert.alert('Error', 'Something went wrong. Try again.');
-    return null;
-  }
-};
+  };
 const logout = async () => {
   try {
     setUser(null); 

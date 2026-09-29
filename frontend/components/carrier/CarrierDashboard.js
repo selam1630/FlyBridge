@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState, useEffect,useContext } from 'react';
 import {
   View,
@@ -71,7 +72,7 @@ useEffect(() => {
 }, [token]);
   const fetchFlights = async () => {
     try {
-      const res = await fetch('https://flybridge-1.onrender.com/api/flights/get');
+      const res = await fetch(`${API_BASE_URL}/api/flights/get`);
       const data = await res.json();
       setFlights(data);
     } catch (err) {
@@ -81,7 +82,7 @@ useEffect(() => {
 
   const fetchShipments = async () => {
   try {
-    const res = await fetch('https://flybridge-1.onrender.com/api/flights/shipments', {
+    const res = await fetch(`${API_BASE_URL}/api/flights/shipments`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -98,7 +99,7 @@ useEffect(() => {
 };
 const fetchUserPoints = async () => {
   try {
-    const res = await fetch("https://flybridge-1.onrender.com/api/points/me", {
+    const res = await fetch(`${API_BASE_URL}/api/points/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -116,7 +117,7 @@ const fetchUserPoints = async () => {
       return;
     }
     try {
-      const res = await fetch('https://flybridge-1.onrender.com/api/flights/add', {
+      const res = await fetch(`${API_BASE_URL}/api/flights/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +204,7 @@ const fetchUserPoints = async () => {
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
          <TouchableOpacity
-           onPress={() => navigation.navigate('SupportChat', { userId: '68eb15ad2961325b5b181310' })}
+           onPress={() => navigation.navigate('SupportChat', { userId: user?.id })}
          
            style={{
              backgroundColor: "",

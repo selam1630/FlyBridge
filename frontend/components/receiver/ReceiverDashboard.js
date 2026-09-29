@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config/api.js';
 import React, { useState, useCallback, useEffect, useContext } from 'react';
 import {
   View,
@@ -120,7 +121,7 @@ export default function ReceiverDashboard() {
     setIsLoading(true);
     setShipmentDetails(null);
     try {
-      const res = await fetch(`https://flybridge-1.onrender.com/api/receiver/track/${trackingCode.trim()}`);
+      const res = await fetch(`${API_BASE_URL}/api/receiver/track/${trackingCode.trim()}`);
       const data = await res.json();
       if (res.ok) {
         setShipmentDetails(data);
@@ -150,7 +151,7 @@ export default function ReceiverDashboard() {
 
     try {
       setIsLoading(true);
-      const API_BASE = "https://flybridge-1.onrender.com";
+      const API_BASE = API_BASE_URL;
       const trackingCode = shipment?.trackingCode;
 
       console.log("Sending confirmation request for:", trackingCode);
@@ -302,7 +303,7 @@ export default function ReceiverDashboard() {
           ) : null}
           <SidebarLink text="TRACK DELIVERY" isActive={activeMenu === 'TRACK'} onPress={() => setActiveMenu('TRACK')} />
      <TouchableOpacity
-  onPress={() => navigation.navigate('SupportChat', { userId: '68eca0dbcbe52ca522fe826d' })}
+  onPress={() => navigation.navigate('SupportChat', { userId: user?.id })}
 
   style={{
     backgroundColor: "",

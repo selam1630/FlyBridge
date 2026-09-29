@@ -3,34 +3,35 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 model User {
-  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  id                   String   @id @default(uuid()) @db.Uuid
   fullName             String
   email                String   @unique
   password             String
-  phone                String    @unique  
+  phone                String    @unique
   nationalID           String
   role                 String
   phoneVerified        Boolean  @default(false)
   nationalIDVerified   Boolean  @default(false)
-  otpCode              String?   
-  otpExpiry            DateTime? 
+  otpCode              String?
+  otpExpiry            DateTime?
   createdAt            DateTime @default(now())
-  flights       Flight[]     @relation("UserFlights")      
+  flights       Flight[]     @relation("UserFlights")
   sentShipments Shipment[]   @relation("SenderShipments")
-  carriedShipments Shipment[] @relation("CarrierShipments") 
-  balance              Float    @default(0) 
-  nationalIDVerifiedAt  DateTime?  
-  nationalIDQRHash      String? 
-  points               Int      @default(0)  
+  carriedShipments Shipment[] @relation("CarrierShipments")
+  supportMessages SupportMessage[] @relation("UserMessages")
+  balance              Float    @default(0)
+  nationalIDVerifiedAt  DateTime?
+  nationalIDQRHash      String?
+  points               Int      @default(0)
   isApproved           Boolean  @default(false)
 }
 model Flight {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  carrierId     String   @db.ObjectId
+  id            String   @id @default(uuid()) @db.Uuid
+  carrierId     String   @db.Uuid
   from          String
   to            String
   departureDate DateTime
@@ -44,16 +45,16 @@ model Flight {
 }
 
 model Shipment {
-  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
-  senderId             String   @db.ObjectId
-  carrierId            String   @db.ObjectId
-  flightId             String   @db.ObjectId
+  id                   String   @id @default(uuid()) @db.Uuid
+  senderId             String   @db.Uuid
+  carrierId            String   @db.Uuid
+  flightId             String   @db.Uuid
   acceptorName         String
   acceptorPhone        String
   acceptorNationalID   String
   itemWeight           Float
   acceptorVerified     Boolean  @default(false)
-  verificationCode     String? 
+  verificationCode     String?
   verificationExpiry   DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -65,18 +66,18 @@ model Shipment {
   status String @default("PENDING")
 }
 model Payment {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(uuid()) @db.Uuid
   shipmentId  String
   reference   String   @unique
   amount      Float
-  status      String   
+  status      String
   releasedAt  DateTime?
   createdAt   DateTime @default(now())
   platformFee Float?
 }
 
 model Agent {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid()) @db.Uuid
   fullName  String
   email     String   @unique
   password  String
@@ -86,14 +87,15 @@ model Agent {
 }
 
 model SupportMessage {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId       
-  agentId   String?  @db.ObjectId       
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  agentId   String?  @db.Uuid
   message   String
-  sentBy    String   
-  status    String   @default("unread") 
+  sentBy    String
+  status    String   @default("unread")
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
 
+  user User @relation("UserMessages", fields: [userId], references: [id])
   agent Agent? @relation("AgentMessages", fields: [agentId], references: [id])
 }

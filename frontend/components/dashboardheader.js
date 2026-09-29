@@ -11,7 +11,8 @@ const COLORS = {
 };
 export default function DashboardHeader({ user }) {
   const navigation = useNavigation();
-  const { logout } = useContext(AuthContext);
+  const { logout, user: authUser } = useContext(AuthContext);
+  const supportUserId = user?.id || authUser?.id;
 
   return (
     <View style={styles.header}>
@@ -21,7 +22,7 @@ export default function DashboardHeader({ user }) {
       <View style={styles.rightSection}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('SupportChat', { userId: user?._id })}
+          onPress={() => navigation.navigate('SupportChat', { userId: supportUserId })}
         >
         </TouchableOpacity>
 
